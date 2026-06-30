@@ -22,8 +22,9 @@ try
     builder.Host.UseSerilog();
 
     var jwtKey = Environment.GetEnvironmentVariable("ATTENDANCE_JWT_KEY")
-        ?? builder.Configuration["Jwt:Key"]
-        ?? throw new InvalidOperationException("JWT key not configured. Set ATTENDANCE_JWT_KEY environment variable or Jwt:Key in appsettings.");
+        ?? builder.Configuration["Jwt:Key"];
+    if (string.IsNullOrWhiteSpace(jwtKey))
+        throw new InvalidOperationException("JWT key not configured. Set ATTENDANCE_JWT_KEY environment variable or Jwt:Key in appsettings.");
     var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
         ?? "Server=localhost;Database=AttendanceManagerDb;Trusted_Connection=True;TrustServerCertificate=True;";
 

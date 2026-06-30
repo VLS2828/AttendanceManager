@@ -166,17 +166,49 @@ public class LeaveService : ILeaveService
 
         if (request.Status == LeaveStatus.Approved)
         {
-            // restore leave balance
-            var balance = await _unitOfWork.LeaveBalances.FirstOrDefaultAsync(
-                lb => lb.EmployeeId == request.EmployeeId &&
-                      lb.LeaveTypeId == request.LeaveTypeId &&
-                      lb.Year == request.StartDate.Year);
-
-            if (balance != null)
+            // restore leave balance (handle cross-year scenarios)
+            if (request.StartDate.Year == request.EndDate.Year)
             {
-                balance.UsedDays = Math.Max(0, balance.UsedDays - request.TotalDays);
-                balance.UpdatedAt = DateTime.UtcNow;
-                _unitOfWork.LeaveBalances.Update(balance);
+                var balance = await _unitOfWork.LeaveBalances.FirstOrDefaultAsync(
+                    lb => lb.EmployeeId == request.EmployeeId &&
+                          lb.LeaveTypeId == request.LeaveTypeId &&
+                          lb.Year == request.StartDate.Year);
+                if (balance != null)
+                {
+                    balance.UsedDays = Math.Max(0, balance.UsedDays - request.TotalDays);
+                    balance.UpdatedAt = DateTime.UtcNow;
+                    _unitOfWork.LeaveBalances.Update(balance);
+                }
+            }
+            else
+            {
+                var endOfStartYear = new DateOnly(request.StartDate.Year, 12, 31);
+                int daysInStartYear = 0;
+                for (var d = request.StartDate; d <= endOfStartYear && d <= request.EndDate; d = d.AddDays(1))
+                    daysInStartYear++;
+                int daysInEndYear = request.TotalDays - daysInStartYear;
+
+                var startYearBalance = await _unitOfWork.LeaveBalances.FirstOrDefaultAsync(
+                    lb => lb.EmployeeId == request.EmployeeId &&
+                          lb.LeaveTypeId == request.LeaveTypeId &&
+                          lb.Year == request.StartDate.Year);
+                if (startYearBalance != null)
+                {
+                    startYearBalance.UsedDays = Math.Max(0, startYearBalance.UsedDays - daysInStartYear);
+                    startYearBalance.UpdatedAt = DateTime.UtcNow;
+                    _unitOfWork.LeaveBalances.Update(startYearBalance);
+                }
+
+                var endYearBalance = await _unitOfWork.LeaveBalances.FirstOrDefaultAsync(
+                    lb => lb.EmployeeId == request.EmployeeId &&
+                          lb.LeaveTypeId == request.LeaveTypeId &&
+                          lb.Year == request.EndDate.Year);
+                if (endYearBalance != null)
+                {
+                    endYearBalance.UsedDays = Math.Max(0, endYearBalance.UsedDays - daysInEndYear);
+                    endYearBalance.UpdatedAt = DateTime.UtcNow;
+                    _unitOfWork.LeaveBalances.Update(endYearBalance);
+                }
             }
 
             // revert attendance

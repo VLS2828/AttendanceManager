@@ -1,3 +1,4 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -19,6 +20,7 @@ public class AttendanceAgent
     private readonly System.Timers.Timer _notificationTimer;
     private readonly List<PendingIdleRecord> _pendingIdleRecords = new();
     private readonly object _pendingLock = new();
+    private DateTime _tokenExpiry = DateTime.MinValue;
 
     public event EventHandler<string>? StatusChanged;
     public event EventHandler<List<NotificationDto>>? NotificationsReceived;
@@ -239,13 +241,34 @@ public class AttendanceAgent
     {
         if (_config == null || string.IsNullOrEmpty(_config.Token)) return;
 
+        if (_tokenExpiry == DateTime.MinValue)
+            _tokenExpiry = GetTokenExpiry(_config.Token);
+
+        if (DateTime.UtcNow < _tokenExpiry.AddMinutes(-30))
+            return;
+
         var response = await _apiClient.RefreshTokenAsync(_config.Token);
         if (response?.Success == true && !string.IsNullOrEmpty(response.Token))
         {
             _config.Token = response.Token;
+            _tokenExpiry = GetTokenExpiry(_config.Token);
             _apiClient.SetAuthToken(_config.Token);
             SaveConfig();
             _logger.LogInformation("Token refreshed for Employee {Id}", _config.EmployeeId);
+        }
+    }
+
+    private static DateTime GetTokenExpiry(string token)
+    {
+        try
+        {
+            var handler = new JwtSecurityTokenHandler();
+            var jwt = handler.ReadJwtToken(token);
+            return jwt.ValidTo;
+        }
+        catch
+        {
+            return DateTime.UtcNow;
         }
     }
 
@@ -311,7 +334,7 @@ public class AttendanceAgent
         }
     }
 
-    private static string EncryptToken(string token)
+    private string EncryptToken(string token)
     {
         try
         {
@@ -319,13 +342,14 @@ public class AttendanceAgent
             var encrypted = ProtectedData.Protect(data, null, DataProtectionScope.CurrentUser);
             return Convert.ToBase64String(encrypted);
         }
-        catch
+        catch (Exception ex)
         {
+            _logger.LogWarning(ex, "DPAPI encryption failed; token will be stored in plaintext");
             return token;
         }
     }
 
-    private static string DecryptToken(string encryptedToken)
+    private string DecryptToken(string encryptedToken)
     {
         try
         {
@@ -333,8 +357,9 @@ public class AttendanceAgent
             var decrypted = ProtectedData.Unprotect(data, null, DataProtectionScope.CurrentUser);
             return Encoding.UTF8.GetString(decrypted);
         }
-        catch
+        catch (Exception ex)
         {
+            _logger.LogWarning(ex, "DPAPI decryption failed; treating value as plaintext");
             return encryptedToken;
         }
     }

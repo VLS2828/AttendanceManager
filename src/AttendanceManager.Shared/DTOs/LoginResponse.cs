@@ -1,0 +1,11 @@
+namespace AttendanceManager.Shared.DTOs;
+
+public class LoginResponse
+{
+    public bool Success { get; set; }
+    public string? Token { get; set; }
+    public int EmployeeId { get; set; }
+    public string FullName { get; set; } = string.Empty;
+    public string Role { get; set; } = string.Empty;
+    public string? ErrorMessage { get; set; }
+}

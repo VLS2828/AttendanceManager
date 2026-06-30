@@ -1,0 +1,62 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{B2FE9611-B7A7-4BB8-A2C3-5BC47F028DFA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AttendanceManager.Core", "src\AttendanceManager.Core\AttendanceManager.Core.csproj", "{EBF938F2-D83F-4FC9-AE98-B86FF7B65F7E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AttendanceManager.Infrastructure", "src\AttendanceManager.Infrastructure\AttendanceManager.Infrastructure.csproj", "{80C72B0E-374C-4841-A54C-930F8830B09D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AttendanceManager.Shared", "src\AttendanceManager.Shared\AttendanceManager.Shared.csproj", "{0C104BE1-8EFE-4B32-A67C-9B4149DA7A3F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AttendanceManager.Server", "src\AttendanceManager.Server\AttendanceManager.Server.csproj", "{94EE14AB-8E71-4C22-B93D-18FAB023DCFB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AttendanceManager.AdminApp", "src\AttendanceManager.AdminApp\AttendanceManager.AdminApp.csproj", "{A61EF4C3-F0FC-4E72-8CA2-9B987191A766}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AttendanceManager.Agent", "src\AttendanceManager.Agent\AttendanceManager.Agent.csproj", "{1461C064-13FA-4A03-8AD6-96CABC2FBB96}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{EBF938F2-D83F-4FC9-AE98-B86FF7B65F7E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EBF938F2-D83F-4FC9-AE98-B86FF7B65F7E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EBF938F2-D83F-4FC9-AE98-B86FF7B65F7E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EBF938F2-D83F-4FC9-AE98-B86FF7B65F7E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{80C72B0E-374C-4841-A54C-930F8830B09D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{80C72B0E-374C-4841-A54C-930F8830B09D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{80C72B0E-374C-4841-A54C-930F8830B09D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{80C72B0E-374C-4841-A54C-930F8830B09D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0C104BE1-8EFE-4B32-A67C-9B4149DA7A3F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0C104BE1-8EFE-4B32-A67C-9B4149DA7A3F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0C104BE1-8EFE-4B32-A67C-9B4149DA7A3F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0C104BE1-8EFE-4B32-A67C-9B4149DA7A3F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{94EE14AB-8E71-4C22-B93D-18FAB023DCFB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{94EE14AB-8E71-4C22-B93D-18FAB023DCFB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{94EE14AB-8E71-4C22-B93D-18FAB023DCFB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{94EE14AB-8E71-4C22-B93D-18FAB023DCFB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A61EF4C3-F0FC-4E72-8CA2-9B987191A766}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A61EF4C3-F0FC-4E72-8CA2-9B987191A766}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A61EF4C3-F0FC-4E72-8CA2-9B987191A766}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A61EF4C3-F0FC-4E72-8CA2-9B987191A766}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1461C064-13FA-4A03-8AD6-96CABC2FBB96}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1461C064-13FA-4A03-8AD6-96CABC2FBB96}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1461C064-13FA-4A03-8AD6-96CABC2FBB96}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1461C064-13FA-4A03-8AD6-96CABC2FBB96}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{EBF938F2-D83F-4FC9-AE98-B86FF7B65F7E} = {B2FE9611-B7A7-4BB8-A2C3-5BC47F028DFA}
+		{80C72B0E-374C-4841-A54C-930F8830B09D} = {B2FE9611-B7A7-4BB8-A2C3-5BC47F028DFA}
+		{0C104BE1-8EFE-4B32-A67C-9B4149DA7A3F} = {B2FE9611-B7A7-4BB8-A2C3-5BC47F028DFA}
+		{94EE14AB-8E71-4C22-B93D-18FAB023DCFB} = {B2FE9611-B7A7-4BB8-A2C3-5BC47F028DFA}
+		{A61EF4C3-F0FC-4E72-8CA2-9B987191A766} = {B2FE9611-B7A7-4BB8-A2C3-5BC47F028DFA}
+		{1461C064-13FA-4A03-8AD6-96CABC2FBB96} = {B2FE9611-B7A7-4BB8-A2C3-5BC47F028DFA}
+	EndGlobalSection
+EndGlobal

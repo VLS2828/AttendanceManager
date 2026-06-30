@@ -1,0 +1,23 @@
+<UserControl x:Class="AttendanceManager.AdminApp.Views.Pages.AuditLogPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <StackPanel>
+        <TextBlock Text="Audit Log" FontSize="24" FontWeight="Bold"
+                   Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,20" />
+
+        <Border Style="{StaticResource CardBorder}" Margin="0,0,0,15">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="Start:" VerticalAlignment="Center" Margin="0,0,10,0" />
+                <DatePicker x:Name="DpStart" Width="140" Margin="0,0,20,0" />
+                <TextBlock Text="End:" VerticalAlignment="Center" Margin="0,0,10,0" />
+                <DatePicker x:Name="DpEnd" Width="140" Margin="0,0,20,0" />
+                <Button Content="Search" Style="{StaticResource PrimaryButton}" Padding="15,8"
+                        Click="BtnSearch_Click" />
+            </StackPanel>
+        </Border>
+
+        <Border Style="{StaticResource CardBorder}">
+            <DataGrid x:Name="DgAuditLogs" MaxHeight="500" AutoGenerateColumns="True" />
+        </Border>
+    </StackPanel>
+</UserControl>

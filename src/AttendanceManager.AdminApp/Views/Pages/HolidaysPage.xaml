@@ -1,0 +1,17 @@
+<UserControl x:Class="AttendanceManager.AdminApp.Views.Pages.HolidaysPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <StackPanel>
+        <DockPanel Margin="0,0,0,20">
+            <TextBlock Text="Holidays" FontSize="24" FontWeight="Bold"
+                       Foreground="{StaticResource TextPrimaryBrush}" DockPanel.Dock="Left" />
+            <Button x:Name="BtnAdd" Content="Add Holiday" Style="{StaticResource PrimaryButton}"
+                    DockPanel.Dock="Right" HorizontalAlignment="Right" Padding="15,8"
+                    Click="BtnAdd_Click" Visibility="Collapsed" />
+        </DockPanel>
+
+        <Border Style="{StaticResource CardBorder}">
+            <DataGrid x:Name="DgHolidays" MaxHeight="500" AutoGenerateColumns="True" />
+        </Border>
+    </StackPanel>
+</UserControl>

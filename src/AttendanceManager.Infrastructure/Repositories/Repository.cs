@@ -25,6 +25,10 @@ public class Repository<T> : IRepository<T> where T : class
     public async Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate) =>
         await DbSet.Where(predicate).ToListAsync();
 
+    public async Task<IEnumerable<T>> FindWithIncludeAsync<TProperty>(
+        Expression<Func<T, bool>> predicate, Expression<Func<T, TProperty>> includeProperty) =>
+        await DbSet.Where(predicate).Include(includeProperty).ToListAsync();
+
     public async Task<T?> FirstOrDefaultAsync(Expression<Func<T, bool>> predicate) =>
         await DbSet.FirstOrDefaultAsync(predicate);
 

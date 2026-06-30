@@ -63,10 +63,29 @@ public class AddHolidayDialog : Window
         var okBtn = new Button { Content = "Add", Width = 80, Margin = new Thickness(0, 0, 10, 0) };
         okBtn.Click += async (_, _) =>
         {
-            // call API directly
-            var httpClient = new System.Net.Http.HttpClient();
-            DialogResult = true;
-            Close();
+            if (string.IsNullOrWhiteSpace(txtName.Text) || dpDate.SelectedDate == null)
+            {
+                MessageBox.Show("Please enter holiday name and date.", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            var result = await App.Api.CreateHolidayAsync(new
+            {
+                Name = txtName.Text.Trim(),
+                Date = dpDate.SelectedDate.Value.ToString("yyyy-MM-dd"),
+                Description = txtDesc.Text.Trim(),
+                IsOptional = chkOptional.IsChecked == true
+            });
+
+            if (result?.Success == true)
+            {
+                DialogResult = true;
+                Close();
+            }
+            else
+            {
+                MessageBox.Show(result?.Message ?? "Failed to add holiday.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         };
         var cancelBtn = new Button { Content = "Cancel", Width = 80, IsCancel = true };
         btnPanel.Children.Add(okBtn);

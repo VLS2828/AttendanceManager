@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using AttendanceManager.Core.Entities;
 using AttendanceManager.Core.Interfaces;
 using Microsoft.Extensions.Logging;
@@ -41,16 +42,12 @@ public class AuditService : IAuditService
 
     public async Task<IEnumerable<AuditLog>> GetAuditLogsAsync(int? employeeId = null, DateOnly? startDate = null, DateOnly? endDate = null)
     {
-        var logs = await _unitOfWork.AuditLogs.GetAllAsync();
-        var filtered = logs.AsEnumerable();
+        Expression<Func<AuditLog, bool>> predicate = l =>
+            (!employeeId.HasValue || l.EmployeeId == employeeId.Value) &&
+            (!startDate.HasValue || l.Date >= startDate.Value) &&
+            (!endDate.HasValue || l.Date <= endDate.Value);
 
-        if (employeeId.HasValue)
-            filtered = filtered.Where(l => l.EmployeeId == employeeId.Value);
-        if (startDate.HasValue)
-            filtered = filtered.Where(l => l.Date >= startDate.Value);
-        if (endDate.HasValue)
-            filtered = filtered.Where(l => l.Date <= endDate.Value);
-
-        return filtered.OrderByDescending(l => l.Timestamp).ToList();
+        var logs = await _unitOfWork.AuditLogs.FindAsync(predicate);
+        return logs.OrderByDescending(l => l.Timestamp).ToList();
     }
 }

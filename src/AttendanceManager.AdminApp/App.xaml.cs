@@ -19,7 +19,6 @@ public partial class App : Application
         services.AddSingleton<HttpClient>(sp =>
         {
             var client = new HttpClient();
-            client.BaseAddress = new Uri("https://localhost:5001");
             client.Timeout = TimeSpan.FromSeconds(30);
             return client;
         });

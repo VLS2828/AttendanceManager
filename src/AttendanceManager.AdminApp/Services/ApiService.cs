@@ -10,6 +10,7 @@ public class ApiService
 {
     private readonly HttpClient _httpClient;
     private readonly JsonSerializerOptions _jsonOptions;
+    private string _baseUrl = string.Empty;
     private string _token = string.Empty;
     private int _employeeId;
     private string _role = string.Empty;
@@ -28,8 +29,11 @@ public class ApiService
 
     public void SetBaseUrl(string url)
     {
-        _httpClient.BaseAddress = new Uri(url);
+        _baseUrl = url.TrimEnd('/');
     }
+
+    private string BuildUrl(string relativeUrl) =>
+        string.IsNullOrEmpty(_baseUrl) ? relativeUrl : $"{_baseUrl}/{relativeUrl}";
 
     private void SetAuthHeader()
     {
@@ -39,7 +43,7 @@ public class ApiService
 
     public async Task<LoginResponse> LoginAsync(string email, string password)
     {
-        var response = await _httpClient.PostAsJsonAsync("api/auth/login", new LoginRequest
+        var response = await _httpClient.PostAsJsonAsync(BuildUrl("api/auth/login"), new LoginRequest
         {
             Email = email,
             Password = password
@@ -62,90 +66,90 @@ public class ApiService
 
     public async Task<AdminDashboardDto?> GetAdminDashboardAsync()
     {
-        var result = await GetAsync<AdminDashboardDto>("api/dashboard/admin");
+        var result = await GetAsync<AdminDashboardDto>(BuildUrl("api/dashboard/admin"));
         return result?.Data;
     }
 
     public async Task<EmployeeDashboardDto?> GetEmployeeDashboardAsync(int employeeId)
     {
-        var result = await GetAsync<EmployeeDashboardDto>($"api/dashboard/employee/{employeeId}");
+        var result = await GetAsync<EmployeeDashboardDto>(BuildUrl($"api/dashboard/employee/{employeeId}"));
         return result?.Data;
     }
 
     public async Task<List<EmployeeDto>> GetAllEmployeesAsync()
     {
-        var result = await GetAsync<List<EmployeeDto>>("api/employee");
+        var result = await GetAsync<List<EmployeeDto>>(BuildUrl("api/employee"));
         return result?.Data ?? new();
     }
 
     public async Task<ApiResponse<EmployeeDto>?> CreateEmployeeAsync(object request)
     {
-        return await PostAsync<EmployeeDto>("api/employee", request);
+        return await PostAsync<EmployeeDto>(BuildUrl("api/employee"), request);
     }
 
     public async Task<List<AttendanceDto>> GetDailyAttendanceAsync(string date)
     {
-        var result = await GetAsync<List<AttendanceDto>>($"api/attendance/daily?date={date}");
+        var result = await GetAsync<List<AttendanceDto>>(BuildUrl($"api/attendance/daily?date={date}"));
         return result?.Data ?? new();
     }
 
     public async Task<List<AttendanceDto>> GetAttendanceRangeAsync(int employeeId, string startDate, string endDate)
     {
-        var result = await GetAsync<List<AttendanceDto>>($"api/attendance/range/{employeeId}?startDate={startDate}&endDate={endDate}");
+        var result = await GetAsync<List<AttendanceDto>>(BuildUrl($"api/attendance/range/{employeeId}?startDate={startDate}&endDate={endDate}"));
         return result?.Data ?? new();
     }
 
     public async Task<ApiResponse?> UpdateAttendanceStatusAsync(long id, string status, string reason)
     {
-        return await PutAsync($"api/attendance/{id}/status?status={status}&reason={Uri.EscapeDataString(reason)}");
+        return await PutAsync(BuildUrl($"api/attendance/{id}/status?status={status}&reason={Uri.EscapeDataString(reason)}"));
     }
 
     public async Task<ApiResponse?> UpdateLoginTimeAsync(long id, string loginTime, string reason)
     {
-        return await PutAsync($"api/attendance/{id}/login-time?loginTime={Uri.EscapeDataString(loginTime)}&reason={Uri.EscapeDataString(reason)}");
+        return await PutAsync(BuildUrl($"api/attendance/{id}/login-time?loginTime={Uri.EscapeDataString(loginTime)}&reason={Uri.EscapeDataString(reason)}"));
     }
 
     public async Task<ApiResponse?> UpdateLogoutTimeAsync(long id, string logoutTime, string reason)
     {
-        return await PutAsync($"api/attendance/{id}/logout-time?logoutTime={Uri.EscapeDataString(logoutTime)}&reason={Uri.EscapeDataString(reason)}");
+        return await PutAsync(BuildUrl($"api/attendance/{id}/logout-time?logoutTime={Uri.EscapeDataString(logoutTime)}&reason={Uri.EscapeDataString(reason)}"));
     }
 
     public async Task<ApiResponse?> InsertManualAttendanceAsync(AttendanceDto dto, string reason)
     {
-        var response = await _httpClient.PostAsJsonAsync($"api/attendance/manual?reason={Uri.EscapeDataString(reason)}", dto);
+        var response = await _httpClient.PostAsJsonAsync(BuildUrl($"api/attendance/manual?reason={Uri.EscapeDataString(reason)}"), dto);
         var content = await response.Content.ReadAsStringAsync();
         return JsonSerializer.Deserialize<ApiResponse>(content, _jsonOptions);
     }
 
     public async Task<ApiResponse?> DeleteAttendanceAsync(long id, string reason)
     {
-        var response = await _httpClient.DeleteAsync($"api/attendance/{id}?reason={Uri.EscapeDataString(reason)}");
+        var response = await _httpClient.DeleteAsync(BuildUrl($"api/attendance/{id}?reason={Uri.EscapeDataString(reason)}"));
         var content = await response.Content.ReadAsStringAsync();
         return JsonSerializer.Deserialize<ApiResponse>(content, _jsonOptions);
     }
 
     public async Task<List<LeaveRequestDto>> GetPendingLeavesAsync()
     {
-        var result = await GetAsync<List<LeaveRequestDto>>("api/leave/pending");
+        var result = await GetAsync<List<LeaveRequestDto>>(BuildUrl("api/leave/pending"));
         return result?.Data ?? new();
     }
 
     public async Task<List<LeaveRequestDto>> GetEmployeeLeavesAsync(int employeeId)
     {
-        var result = await GetAsync<List<LeaveRequestDto>>($"api/leave/employee/{employeeId}");
+        var result = await GetAsync<List<LeaveRequestDto>>(BuildUrl($"api/leave/employee/{employeeId}"));
         return result?.Data ?? new();
     }
 
     public async Task<ApiResponse?> SubmitLeaveRequestAsync(object request)
     {
-        var response = await _httpClient.PostAsJsonAsync("api/leave/request", request);
+        var response = await _httpClient.PostAsJsonAsync(BuildUrl("api/leave/request"), request);
         var content = await response.Content.ReadAsStringAsync();
         return JsonSerializer.Deserialize<ApiResponse>(content, _jsonOptions);
     }
 
     public async Task<ApiResponse?> ApproveLeaveAsync(int id, string? remarks)
     {
-        var url = $"api/leave/{id}/approve" + (remarks != null ? $"?remarks={Uri.EscapeDataString(remarks)}" : "");
+        var url = BuildUrl($"api/leave/{id}/approve") + (remarks != null ? $"?remarks={Uri.EscapeDataString(remarks)}" : "");
         var response = await _httpClient.PostAsync(url, null);
         var content = await response.Content.ReadAsStringAsync();
         return JsonSerializer.Deserialize<ApiResponse>(content, _jsonOptions);
@@ -153,7 +157,7 @@ public class ApiService
 
     public async Task<ApiResponse?> RejectLeaveAsync(int id, string? remarks)
     {
-        var url = $"api/leave/{id}/reject" + (remarks != null ? $"?remarks={Uri.EscapeDataString(remarks)}" : "");
+        var url = BuildUrl($"api/leave/{id}/reject") + (remarks != null ? $"?remarks={Uri.EscapeDataString(remarks)}" : "");
         var response = await _httpClient.PostAsync(url, null);
         var content = await response.Content.ReadAsStringAsync();
         return JsonSerializer.Deserialize<ApiResponse>(content, _jsonOptions);
@@ -161,7 +165,7 @@ public class ApiService
 
     public async Task<ApiResponse?> CancelLeaveAsync(int id, string? remarks)
     {
-        var url = $"api/leave/{id}/cancel" + (remarks != null ? $"?remarks={Uri.EscapeDataString(remarks)}" : "");
+        var url = BuildUrl($"api/leave/{id}/cancel") + (remarks != null ? $"?remarks={Uri.EscapeDataString(remarks)}" : "");
         var response = await _httpClient.PostAsync(url, null);
         var content = await response.Content.ReadAsStringAsync();
         return JsonSerializer.Deserialize<ApiResponse>(content, _jsonOptions);
@@ -169,45 +173,57 @@ public class ApiService
 
     public async Task<List<LeaveBalanceDto>> GetLeaveBalancesAsync(int employeeId, int? year = null)
     {
-        var url = $"api/leave/balance/{employeeId}" + (year.HasValue ? $"?year={year}" : "");
+        var url = BuildUrl($"api/leave/balance/{employeeId}") + (year.HasValue ? $"?year={year}" : "");
         var result = await GetAsync<List<LeaveBalanceDto>>(url);
         return result?.Data ?? new();
     }
 
     public async Task<List<NotificationDto>> GetNotificationsAsync(int employeeId)
     {
-        var result = await GetAsync<List<NotificationDto>>($"api/notification/{employeeId}");
+        var result = await GetAsync<List<NotificationDto>>(BuildUrl($"api/notification/{employeeId}"));
         return result?.Data ?? new();
     }
 
     public async Task<List<NotificationDto>> GetUnreadNotificationsAsync(int employeeId)
     {
-        var result = await GetAsync<List<NotificationDto>>($"api/notification/unread/{employeeId}");
+        var result = await GetAsync<List<NotificationDto>>(BuildUrl($"api/notification/unread/{employeeId}"));
         return result?.Data ?? new();
     }
 
     public async Task MarkNotificationAsReadAsync(long id)
     {
-        await _httpClient.PostAsync($"api/notification/{id}/read", null);
+        await _httpClient.PostAsync(BuildUrl($"api/notification/{id}/read"), null);
+    }
+
+    public async Task MarkAllNotificationsAsReadAsync(int employeeId)
+    {
+        await _httpClient.PostAsync(BuildUrl($"api/notification/{employeeId}/read-all"), null);
     }
 
     public async Task<List<object>> GetHolidaysAsync(int? year = null)
     {
         var y = year ?? DateTime.Now.Year;
-        var result = await GetAsync<List<object>>($"api/holiday?year={y}");
+        var result = await GetAsync<List<object>>(BuildUrl($"api/holiday?year={y}"));
         return result?.Data ?? new();
+    }
+
+    public async Task<ApiResponse?> CreateHolidayAsync(object request)
+    {
+        var response = await _httpClient.PostAsJsonAsync(BuildUrl("api/holiday"), request);
+        var content = await response.Content.ReadAsStringAsync();
+        return JsonSerializer.Deserialize<ApiResponse>(content, _jsonOptions);
     }
 
     public async Task<List<object>> GetDepartmentsAsync()
     {
-        var result = await GetAsync<List<object>>("api/department");
+        var result = await GetAsync<List<object>>(BuildUrl("api/department"));
         return result?.Data ?? new();
     }
 
     public async Task<List<AttendanceDto>> GetReportAsync(string reportType, Dictionary<string, string> parameters)
     {
         var query = string.Join("&", parameters.Select(p => $"{p.Key}={Uri.EscapeDataString(p.Value)}"));
-        var result = await GetAsync<List<AttendanceDto>>($"api/report/{reportType}?{query}");
+        var result = await GetAsync<List<AttendanceDto>>(BuildUrl($"api/report/{reportType}?{query}"));
         return result?.Data ?? new();
     }
 
@@ -219,7 +235,7 @@ public class ApiService
         if (endDate != null) parameters.Add($"endDate={endDate}");
 
         var query = parameters.Count > 0 ? "?" + string.Join("&", parameters) : "";
-        var result = await GetAsync<List<object>>($"api/audit{query}");
+        var result = await GetAsync<List<object>>(BuildUrl($"api/audit{query}"));
         return result?.Data ?? new();
     }
 

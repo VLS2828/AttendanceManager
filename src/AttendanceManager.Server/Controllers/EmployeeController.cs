@@ -88,6 +88,10 @@ public class EmployeeController : ControllerBase
     [HttpPost("{id}/change-password")]
     public async Task<ActionResult<ApiResponse>> ChangePassword(int id, [FromBody] ChangePasswordRequest request)
     {
+        var currentEmployeeId = int.Parse(User.FindFirst("EmployeeId")?.Value ?? "0");
+        if (currentEmployeeId != id)
+            return Forbid();
+
         await _employeeService.ChangePasswordAsync(id, request.CurrentPassword, request.NewPassword);
         return Ok(ApiResponse.Ok("Password changed."));
     }

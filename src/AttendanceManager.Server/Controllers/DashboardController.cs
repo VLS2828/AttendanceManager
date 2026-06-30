@@ -93,6 +93,11 @@ public class DashboardController : ControllerBase
     [HttpGet("employee/{employeeId}")]
     public async Task<ActionResult<ApiResponse<EmployeeDashboardDto>>> GetEmployeeDashboard(int employeeId)
     {
+        var currentEmployeeId = int.Parse(User.FindFirst("EmployeeId")?.Value ?? "0");
+        var isAdmin = User.IsInRole("Admin");
+        if (currentEmployeeId != employeeId && !isAdmin)
+            return Forbid();
+
         var today = DateOnly.FromDateTime(DateTime.Now);
         var startOfMonth = new DateOnly(today.Year, today.Month, 1);
         var endOfMonth = startOfMonth.AddMonths(1).AddDays(-1);

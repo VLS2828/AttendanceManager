@@ -10,6 +10,7 @@ public class ApiClient
     private readonly HttpClient _httpClient;
     private readonly ILogger<ApiClient> _logger;
     private readonly JsonSerializerOptions _jsonOptions;
+    private string _authToken = string.Empty;
 
     public ApiClient(HttpClient httpClient, ILogger<ApiClient> logger)
     {
@@ -18,11 +19,27 @@ public class ApiClient
         _jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
     }
 
+    public void SetAuthToken(string token)
+    {
+        _authToken = token;
+    }
+
+    private HttpRequestMessage CreateRequest(HttpMethod method, string url, object? body = null)
+    {
+        var request = new HttpRequestMessage(method, url);
+        if (!string.IsNullOrEmpty(_authToken))
+            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _authToken);
+        if (body != null)
+            request.Content = System.Net.Http.Json.JsonContent.Create(body);
+        return request;
+    }
+
     public async Task<ApiResponse<AttendanceDto>?> RecordLoginAsync(AgentLoginRequest request)
     {
         try
         {
-            var response = await _httpClient.PostAsJsonAsync("api/attendance/login", request);
+            var httpRequest = CreateRequest(HttpMethod.Post, "api/attendance/login", request);
+            var response = await _httpClient.SendAsync(httpRequest);
             var content = await response.Content.ReadAsStringAsync();
             return JsonSerializer.Deserialize<ApiResponse<AttendanceDto>>(content, _jsonOptions);
         }
@@ -37,7 +54,8 @@ public class ApiClient
     {
         try
         {
-            var response = await _httpClient.PostAsJsonAsync("api/attendance/logout", request);
+            var httpRequest = CreateRequest(HttpMethod.Post, "api/attendance/logout", request);
+            var response = await _httpClient.SendAsync(httpRequest);
             var content = await response.Content.ReadAsStringAsync();
             return JsonSerializer.Deserialize<ApiResponse<AttendanceDto>>(content, _jsonOptions);
         }
@@ -52,7 +70,8 @@ public class ApiClient
     {
         try
         {
-            var response = await _httpClient.PostAsJsonAsync("api/attendance/idle", request);
+            var httpRequest = CreateRequest(HttpMethod.Post, "api/attendance/idle", request);
+            var response = await _httpClient.SendAsync(httpRequest);
             return response.IsSuccessStatusCode;
         }
         catch (Exception ex)
@@ -73,6 +92,23 @@ public class ApiClient
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to authenticate");
+            return null;
+        }
+    }
+
+    public async Task<LoginResponse?> RefreshTokenAsync(string token)
+    {
+        try
+        {
+            var request = new HttpRequestMessage(HttpMethod.Post, "api/auth/refresh");
+            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            var response = await _httpClient.SendAsync(request);
+            var content = await response.Content.ReadAsStringAsync();
+            return JsonSerializer.Deserialize<LoginResponse>(content, _jsonOptions);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to refresh token");
             return null;
         }
     }

@@ -23,7 +23,6 @@ public class AttendanceController : ControllerBase
     }
 
     [HttpPost("login")]
-    [AllowAnonymous]
     public async Task<ActionResult<ApiResponse<AttendanceDto>>> RecordLogin([FromBody] AgentLoginRequest request)
     {
         var attendance = await _attendanceService.RecordLoginAsync(
@@ -36,7 +35,6 @@ public class AttendanceController : ControllerBase
     }
 
     [HttpPost("logout")]
-    [AllowAnonymous]
     public async Task<ActionResult<ApiResponse<AttendanceDto>>> RecordLogout([FromBody] AgentLogoutRequest request)
     {
         var attendance = await _attendanceService.RecordLogoutAsync(request.EmployeeId);
@@ -47,7 +45,6 @@ public class AttendanceController : ControllerBase
     }
 
     [HttpPost("idle")]
-    [AllowAnonymous]
     public async Task<ActionResult<ApiResponse>> RecordIdleTime([FromBody] IdleTimeDto request)
     {
         await _attendanceService.RecordIdleTimeAsync(request.EmployeeId, request.IdleStartTime, request.IdleEndTime);
@@ -68,8 +65,8 @@ public class AttendanceController : ControllerBase
     public async Task<ActionResult<ApiResponse<List<AttendanceDto>>>> GetAttendanceByRange(
         int employeeId, [FromQuery] string startDate, [FromQuery] string endDate)
     {
-        var start = DateOnly.Parse(startDate);
-        var end = DateOnly.Parse(endDate);
+        if (!DateOnly.TryParse(startDate, out var start) || !DateOnly.TryParse(endDate, out var end))
+            return BadRequest(ApiResponse<List<AttendanceDto>>.Fail("Invalid date format. Use yyyy-MM-dd."));
         var records = await _attendanceService.GetAttendanceByDateRangeAsync(employeeId, start, end);
         return Ok(ApiResponse<List<AttendanceDto>>.Ok(records.Select(MapToDto).ToList()));
     }
@@ -78,7 +75,8 @@ public class AttendanceController : ControllerBase
     [Authorize(Policy = "AdminOnly")]
     public async Task<ActionResult<ApiResponse<List<AttendanceDto>>>> GetDailyAttendance([FromQuery] string date)
     {
-        var d = DateOnly.Parse(date);
+        if (!DateOnly.TryParse(date, out var d))
+            return BadRequest(ApiResponse<List<AttendanceDto>>.Fail("Invalid date format. Use yyyy-MM-dd."));
         var records = await _attendanceService.GetAllAttendanceByDateAsync(d);
         var dtos = new List<AttendanceDto>();
         foreach (var r in records)
@@ -149,7 +147,8 @@ public class AttendanceController : ControllerBase
     [Authorize(Policy = "AdminOnly")]
     public async Task<ActionResult<ApiResponse>> ProcessDailyStatus([FromQuery] string date)
     {
-        var d = DateOnly.Parse(date);
+        if (!DateOnly.TryParse(date, out var d))
+            return BadRequest(ApiResponse.Fail("Invalid date format. Use yyyy-MM-dd."));
         await _attendanceService.ProcessDailyAttendanceStatusAsync(d);
         return Ok(ApiResponse.Ok("Daily attendance processed."));
     }

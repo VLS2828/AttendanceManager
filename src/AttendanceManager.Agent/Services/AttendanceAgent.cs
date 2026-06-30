@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using AttendanceManager.Shared.DTOs;
 using Microsoft.Extensions.Logging;
@@ -16,6 +18,7 @@ public class AttendanceAgent
     private readonly System.Timers.Timer _syncTimer;
     private readonly System.Timers.Timer _notificationTimer;
     private readonly List<PendingIdleRecord> _pendingIdleRecords = new();
+    private readonly object _pendingLock = new();
 
     public event EventHandler<string>? StatusChanged;
     public event EventHandler<List<NotificationDto>>? NotificationsReceived;
@@ -49,6 +52,8 @@ public class AttendanceAgent
 
         if (IsAuthenticated)
         {
+            _apiClient.SetAuthToken(_config!.Token);
+            await RefreshTokenAsync();
             await RecordLoginAsync();
             _idleDetector.Start();
             _syncTimer.Start();
@@ -84,6 +89,7 @@ public class AttendanceAgent
             ServerUrl = serverUrl
         };
 
+        _apiClient.SetAuthToken(_config.Token);
         SaveConfig();
         await InitializeAsync();
         return true;
@@ -167,11 +173,14 @@ public class AttendanceAgent
         var success = await _apiClient.RecordIdleTimeAsync(idleRecord);
         if (!success)
         {
-            _pendingIdleRecords.Add(new PendingIdleRecord
+            lock (_pendingLock)
             {
-                Data = idleRecord,
-                AttemptCount = 1
-            });
+                _pendingIdleRecords.Add(new PendingIdleRecord
+                {
+                    Data = idleRecord,
+                    AttemptCount = 1
+                });
+            }
             _logger.LogWarning("Idle record queued for retry");
         }
     }
@@ -188,20 +197,25 @@ public class AttendanceAgent
         }
 
         // retry pending idle records
-        var pending = _pendingIdleRecords.ToList();
+        List<PendingIdleRecord> pending;
+        lock (_pendingLock)
+        {
+            pending = _pendingIdleRecords.ToList();
+        }
+
         foreach (var record in pending)
         {
             var success = await _apiClient.RecordIdleTimeAsync(record.Data);
             if (success)
             {
-                _pendingIdleRecords.Remove(record);
+                lock (_pendingLock) { _pendingIdleRecords.Remove(record); }
             }
             else
             {
                 record.AttemptCount++;
                 if (record.AttemptCount > 10)
                 {
-                    _pendingIdleRecords.Remove(record);
+                    lock (_pendingLock) { _pendingIdleRecords.Remove(record); }
                     _logger.LogWarning("Idle record dropped after 10 retries");
                 }
             }
@@ -212,10 +226,26 @@ public class AttendanceAgent
     {
         if (_config == null || string.IsNullOrEmpty(_config.Token)) return;
 
+        await RefreshTokenAsync();
+
         var notifications = await _apiClient.GetUnreadNotificationsAsync(_config.EmployeeId, _config.Token);
         if (notifications != null && notifications.Count > 0)
         {
             NotificationsReceived?.Invoke(this, notifications);
+        }
+    }
+
+    private async Task RefreshTokenAsync()
+    {
+        if (_config == null || string.IsNullOrEmpty(_config.Token)) return;
+
+        var response = await _apiClient.RefreshTokenAsync(_config.Token);
+        if (response?.Success == true && !string.IsNullOrEmpty(response.Token))
+        {
+            _config.Token = response.Token;
+            _apiClient.SetAuthToken(_config.Token);
+            SaveConfig();
+            _logger.LogInformation("Token refreshed for Employee {Id}", _config.EmployeeId);
         }
     }
 
@@ -242,6 +272,10 @@ public class AttendanceAgent
             {
                 var json = File.ReadAllText(_configPath);
                 _config = JsonSerializer.Deserialize<AgentConfig>(json);
+                if (_config != null && !string.IsNullOrEmpty(_config.EncryptedToken))
+                {
+                    _config.Token = DecryptToken(_config.EncryptedToken);
+                }
             }
         }
         catch (Exception ex)
@@ -256,12 +290,52 @@ public class AttendanceAgent
         {
             var dir = Path.GetDirectoryName(_configPath)!;
             Directory.CreateDirectory(dir);
-            var json = JsonSerializer.Serialize(_config, new JsonSerializerOptions { WriteIndented = true });
+            if (_config != null && !string.IsNullOrEmpty(_config.Token))
+            {
+                _config.EncryptedToken = EncryptToken(_config.Token);
+            }
+            var configToSave = new AgentConfig
+            {
+                EmployeeId = _config?.EmployeeId ?? 0,
+                EmployeeName = _config?.EmployeeName ?? "",
+                Email = _config?.Email ?? "",
+                EncryptedToken = _config?.EncryptedToken ?? "",
+                ServerUrl = _config?.ServerUrl ?? ""
+            };
+            var json = JsonSerializer.Serialize(configToSave, new JsonSerializerOptions { WriteIndented = true });
             File.WriteAllText(_configPath, json);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to save agent config");
+        }
+    }
+
+    private static string EncryptToken(string token)
+    {
+        try
+        {
+            var data = Encoding.UTF8.GetBytes(token);
+            var encrypted = ProtectedData.Protect(data, null, DataProtectionScope.CurrentUser);
+            return Convert.ToBase64String(encrypted);
+        }
+        catch
+        {
+            return token;
+        }
+    }
+
+    private static string DecryptToken(string encryptedToken)
+    {
+        try
+        {
+            var data = Convert.FromBase64String(encryptedToken);
+            var decrypted = ProtectedData.Unprotect(data, null, DataProtectionScope.CurrentUser);
+            return Encoding.UTF8.GetString(decrypted);
+        }
+        catch
+        {
+            return encryptedToken;
         }
     }
 }
@@ -271,7 +345,9 @@ internal class AgentConfig
     public int EmployeeId { get; set; }
     public string EmployeeName { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
+    [System.Text.Json.Serialization.JsonIgnore]
     public string Token { get; set; } = string.Empty;
+    public string EncryptedToken { get; set; } = string.Empty;
     public string ServerUrl { get; set; } = string.Empty;
 }
 

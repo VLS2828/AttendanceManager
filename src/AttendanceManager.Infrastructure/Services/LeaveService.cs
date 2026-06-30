@@ -61,17 +61,49 @@ public class LeaveService : ILeaveService
         request.UpdatedAt = DateTime.UtcNow;
         _unitOfWork.LeaveRequests.Update(request);
 
-        // update leave balance
-        var balance = await _unitOfWork.LeaveBalances.FirstOrDefaultAsync(
-            lb => lb.EmployeeId == request.EmployeeId &&
-                  lb.LeaveTypeId == request.LeaveTypeId &&
-                  lb.Year == request.StartDate.Year);
-
-        if (balance != null)
+        // update leave balance (handle cross-year scenarios)
+        if (request.StartDate.Year == request.EndDate.Year)
         {
-            balance.UsedDays += request.TotalDays;
-            balance.UpdatedAt = DateTime.UtcNow;
-            _unitOfWork.LeaveBalances.Update(balance);
+            var balance = await _unitOfWork.LeaveBalances.FirstOrDefaultAsync(
+                lb => lb.EmployeeId == request.EmployeeId &&
+                      lb.LeaveTypeId == request.LeaveTypeId &&
+                      lb.Year == request.StartDate.Year);
+            if (balance != null)
+            {
+                balance.UsedDays += request.TotalDays;
+                balance.UpdatedAt = DateTime.UtcNow;
+                _unitOfWork.LeaveBalances.Update(balance);
+            }
+        }
+        else
+        {
+            var endOfStartYear = new DateOnly(request.StartDate.Year, 12, 31);
+            int daysInStartYear = 0;
+            for (var d = request.StartDate; d <= endOfStartYear && d <= request.EndDate; d = d.AddDays(1))
+                daysInStartYear++;
+            int daysInEndYear = request.TotalDays - daysInStartYear;
+
+            var startYearBalance = await _unitOfWork.LeaveBalances.FirstOrDefaultAsync(
+                lb => lb.EmployeeId == request.EmployeeId &&
+                      lb.LeaveTypeId == request.LeaveTypeId &&
+                      lb.Year == request.StartDate.Year);
+            if (startYearBalance != null)
+            {
+                startYearBalance.UsedDays += daysInStartYear;
+                startYearBalance.UpdatedAt = DateTime.UtcNow;
+                _unitOfWork.LeaveBalances.Update(startYearBalance);
+            }
+
+            var endYearBalance = await _unitOfWork.LeaveBalances.FirstOrDefaultAsync(
+                lb => lb.EmployeeId == request.EmployeeId &&
+                      lb.LeaveTypeId == request.LeaveTypeId &&
+                      lb.Year == request.EndDate.Year);
+            if (endYearBalance != null)
+            {
+                endYearBalance.UsedDays += daysInEndYear;
+                endYearBalance.UpdatedAt = DateTime.UtcNow;
+                _unitOfWork.LeaveBalances.Update(endYearBalance);
+            }
         }
 
         // update attendance for leave dates
@@ -181,7 +213,9 @@ public class LeaveService : ILeaveService
         await _unitOfWork.LeaveRequests.FindAsync(lr => lr.StartDate <= endDate && lr.EndDate >= startDate);
 
     public async Task<IEnumerable<LeaveBalance>> GetLeaveBalancesAsync(int employeeId, int year) =>
-        await _unitOfWork.LeaveBalances.FindAsync(lb => lb.EmployeeId == employeeId && lb.Year == year);
+        await _unitOfWork.LeaveBalances.FindWithIncludeAsync(
+            lb => lb.EmployeeId == employeeId && lb.Year == year,
+            lb => lb.LeaveType!);
 
     public async Task InitializeLeaveBalancesAsync(int employeeId, int year)
     {

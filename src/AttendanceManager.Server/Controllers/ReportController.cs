@@ -22,7 +22,8 @@ public class ReportController : ControllerBase
     [HttpGet("daily")]
     public async Task<ActionResult<ApiResponse<List<AttendanceDto>>>> DailyReport([FromQuery] string date)
     {
-        var d = DateOnly.Parse(date);
+        if (!DateOnly.TryParse(date, out var d))
+            return BadRequest(ApiResponse<List<AttendanceDto>>.Fail("Invalid date format. Use yyyy-MM-dd."));
         var records = await _reportService.GetDailyAttendanceReportAsync(d);
         var dtos = new List<AttendanceDto>();
         foreach (var r in records)
@@ -56,9 +57,10 @@ public class ReportController : ControllerBase
     public async Task<ActionResult<ApiResponse<List<AttendanceDto>>>> LateArrivals(
         [FromQuery] string startDate, [FromQuery] string endDate, [FromQuery] string? threshold)
     {
-        var start = DateOnly.Parse(startDate);
-        var end = DateOnly.Parse(endDate);
-        var thresholdTime = TimeOnly.Parse(threshold ?? "09:45");
+        if (!DateOnly.TryParse(startDate, out var start) || !DateOnly.TryParse(endDate, out var end))
+            return BadRequest(ApiResponse<List<AttendanceDto>>.Fail("Invalid date format. Use yyyy-MM-dd."));
+        if (!TimeOnly.TryParse(threshold ?? "09:45", out var thresholdTime))
+            return BadRequest(ApiResponse<List<AttendanceDto>>.Fail("Invalid threshold time format."));
         var records = await _reportService.GetLateArrivalsReportAsync(start, end, thresholdTime);
 
         var dtos = new List<AttendanceDto>();
@@ -79,8 +81,8 @@ public class ReportController : ControllerBase
     public async Task<ActionResult<ApiResponse<List<AttendanceDto>>>> Overtime(
         [FromQuery] string startDate, [FromQuery] string endDate, [FromQuery] double? standardHours)
     {
-        var start = DateOnly.Parse(startDate);
-        var end = DateOnly.Parse(endDate);
+        if (!DateOnly.TryParse(startDate, out var start) || !DateOnly.TryParse(endDate, out var end))
+            return BadRequest(ApiResponse<List<AttendanceDto>>.Fail("Invalid date format. Use yyyy-MM-dd."));
         var records = await _reportService.GetOvertimeReportAsync(start, end, standardHours ?? 9);
 
         var dtos = new List<AttendanceDto>();
@@ -100,8 +102,8 @@ public class ReportController : ControllerBase
     public async Task<ActionResult<ApiResponse<List<AttendanceDto>>>> IdleTime(
         [FromQuery] string startDate, [FromQuery] string endDate)
     {
-        var start = DateOnly.Parse(startDate);
-        var end = DateOnly.Parse(endDate);
+        if (!DateOnly.TryParse(startDate, out var start) || !DateOnly.TryParse(endDate, out var end))
+            return BadRequest(ApiResponse<List<AttendanceDto>>.Fail("Invalid date format. Use yyyy-MM-dd."));
         var records = await _reportService.GetIdleTimeReportAsync(start, end);
 
         var dtos = new List<AttendanceDto>();
@@ -122,8 +124,8 @@ public class ReportController : ControllerBase
     public async Task<ActionResult<ApiResponse<List<LeaveRequestDto>>>> LeaveSummary(
         [FromQuery] string startDate, [FromQuery] string endDate)
     {
-        var start = DateOnly.Parse(startDate);
-        var end = DateOnly.Parse(endDate);
+        if (!DateOnly.TryParse(startDate, out var start) || !DateOnly.TryParse(endDate, out var end))
+            return BadRequest(ApiResponse<List<LeaveRequestDto>>.Fail("Invalid date format. Use yyyy-MM-dd."));
         var records = await _reportService.GetLeaveSummaryReportAsync(start, end);
 
         var dtos = new List<LeaveRequestDto>();
@@ -154,8 +156,8 @@ public class ReportController : ControllerBase
     public async Task<ActionResult<ApiResponse<List<AttendanceDto>>>> WorkingHours(
         int employeeId, [FromQuery] string startDate, [FromQuery] string endDate)
     {
-        var start = DateOnly.Parse(startDate);
-        var end = DateOnly.Parse(endDate);
+        if (!DateOnly.TryParse(startDate, out var start) || !DateOnly.TryParse(endDate, out var end))
+            return BadRequest(ApiResponse<List<AttendanceDto>>.Fail("Invalid date format. Use yyyy-MM-dd."));
         var records = await _reportService.GetEmployeeWorkingHoursReportAsync(employeeId, start, end);
         return Ok(ApiResponse<List<AttendanceDto>>.Ok(records.Select(r => new AttendanceDto
         {
@@ -169,8 +171,8 @@ public class ReportController : ControllerBase
     public async Task<ActionResult<ApiResponse<Dictionary<string, object>>>> DepartmentSummary(
         [FromQuery] string startDate, [FromQuery] string endDate)
     {
-        var start = DateOnly.Parse(startDate);
-        var end = DateOnly.Parse(endDate);
+        if (!DateOnly.TryParse(startDate, out var start) || !DateOnly.TryParse(endDate, out var end))
+            return BadRequest(ApiResponse<Dictionary<string, object>>.Fail("Invalid date format. Use yyyy-MM-dd."));
         var summary = await _reportService.GetDepartmentSummaryAsync(start, end);
         return Ok(ApiResponse<Dictionary<string, object>>.Ok(summary));
     }

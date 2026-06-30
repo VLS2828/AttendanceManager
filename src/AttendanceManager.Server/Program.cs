@@ -21,7 +21,9 @@ try
     var builder = WebApplication.CreateBuilder(args);
     builder.Host.UseSerilog();
 
-    var jwtKey = builder.Configuration["Jwt:Key"] ?? "AttendanceManager_SuperSecretKey_2024_ChangeInProduction!";
+    var jwtKey = Environment.GetEnvironmentVariable("ATTENDANCE_JWT_KEY")
+        ?? builder.Configuration["Jwt:Key"]
+        ?? throw new InvalidOperationException("JWT key not configured. Set ATTENDANCE_JWT_KEY environment variable or Jwt:Key in appsettings.");
     var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
         ?? "Server=localhost;Database=AttendanceManagerDb;Trusted_Connection=True;TrustServerCertificate=True;";
 
@@ -66,10 +68,14 @@ try
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen();
 
+    var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
+        ?? new[] { "https://localhost:5001", "https://localhost:7001" };
     builder.Services.AddCors(options =>
     {
-        options.AddPolicy("AllowAll", policy =>
-            policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+        options.AddPolicy("AllowSpecific", policy =>
+            policy.WithOrigins(allowedOrigins)
+                .AllowAnyMethod()
+                .AllowAnyHeader());
     });
 
     var app = builder.Build();
@@ -87,7 +93,7 @@ try
         app.UseSwaggerUI();
     }
 
-    app.UseCors("AllowAll");
+    app.UseCors("AllowSpecific");
     app.UseAuthentication();
     app.UseAuthorization();
     app.MapControllers();

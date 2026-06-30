@@ -45,6 +45,9 @@ public class NotificationService : INotificationService
             .ToList();
     }
 
+    public async Task<Notification?> GetNotificationByIdAsync(long notificationId) =>
+        await _unitOfWork.Notifications.GetByLongIdAsync(notificationId);
+
     public async Task MarkAsReadAsync(long notificationId)
     {
         var notification = await _unitOfWork.Notifications.GetByLongIdAsync(notificationId);

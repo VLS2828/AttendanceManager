@@ -8,6 +8,7 @@ public interface INotificationService
     Task SendNotificationAsync(int employeeId, string title, string message, NotificationType type);
     Task<IEnumerable<Notification>> GetUnreadNotificationsAsync(int employeeId);
     Task<IEnumerable<Notification>> GetAllNotificationsAsync(int employeeId, int page = 1, int pageSize = 20);
+    Task<Notification?> GetNotificationByIdAsync(long notificationId);
     Task MarkAsReadAsync(long notificationId);
     Task MarkAllAsReadAsync(int employeeId);
 }

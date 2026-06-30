@@ -19,7 +19,7 @@ public partial class NotificationsPage : UserControl
 
     private async void BtnMarkAllRead_Click(object sender, RoutedEventArgs e)
     {
-        await App.Api.MarkNotificationAsReadAsync(App.Api.EmployeeId);
+        await App.Api.MarkAllNotificationsAsReadAsync(App.Api.EmployeeId);
         await LoadNotificationsAsync();
     }
 }

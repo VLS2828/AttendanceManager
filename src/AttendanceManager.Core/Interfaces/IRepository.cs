@@ -8,6 +8,7 @@ public interface IRepository<T> where T : class
     Task<T?> GetByLongIdAsync(long id);
     Task<IEnumerable<T>> GetAllAsync();
     Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate);
+    Task<IEnumerable<T>> FindWithIncludeAsync<TProperty>(Expression<Func<T, bool>> predicate, Expression<Func<T, TProperty>> includeProperty);
     Task<T?> FirstOrDefaultAsync(Expression<Func<T, bool>> predicate);
     Task<bool> AnyAsync(Expression<Func<T, bool>> predicate);
     Task<T> AddAsync(T entity);

@@ -66,6 +66,7 @@ public class AttendanceService : IAttendanceService
             var totalSpan = attendance.LogoutTime.Value - attendance.LoginTime.Value;
             attendance.TotalHours = Math.Round(totalSpan.TotalHours, 2);
             attendance.EffectiveHours = Math.Round(attendance.TotalHours - (attendance.IdleTimeMinutes / 60.0), 2);
+            if (attendance.EffectiveHours < 0) attendance.EffectiveHours = 0;
         }
 
         attendance.UpdatedAt = DateTime.UtcNow;

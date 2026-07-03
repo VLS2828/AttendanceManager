@@ -35,6 +35,9 @@
                     <Button Content="Export Excel" Padding="15,8" Click="BtnExportExcel_Click"
                             VerticalAlignment="Bottom" Margin="0,0,10,10"
                             Background="#16A34A" Foreground="White" BorderThickness="0" Cursor="Hand" />
+                    <Button Content="Download CSV" Padding="15,8" Click="BtnDownloadCsv_Click"
+                            VerticalAlignment="Bottom" Margin="0,0,10,10"
+                            Background="#0369A1" Foreground="White" BorderThickness="0" Cursor="Hand" />
                 </WrapPanel>
             </StackPanel>
         </Border>

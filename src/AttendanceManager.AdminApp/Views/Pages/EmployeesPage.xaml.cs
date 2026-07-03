@@ -48,7 +48,7 @@ public class AddEmployeeDialog : Window
     {
         Title = "Add New Employee";
         Width = 450;
-        Height = 520;
+        Height = 580;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
         ResizeMode = ResizeMode.NoResize;
 
@@ -59,6 +59,7 @@ public class AddEmployeeDialog : Window
         var txtLastName = AddField(panel, "Last Name:");
         var txtEmail = AddField(panel, "Email:");
         var txtPassword = AddField(panel, "Password:");
+        var txtPin = AddField(panel, "PIN (4-6 digits, optional):");
         var txtPhone = AddField(panel, "Phone:");
         var txtDeptId = AddField(panel, "Department ID:");
         var cmbRole = new ComboBox { Margin = new Thickness(0, 2, 0, 8) };
@@ -78,6 +79,7 @@ public class AddEmployeeDialog : Window
                 LastName = txtLastName.Text,
                 Email = txtEmail.Text,
                 Password = txtPassword.Text,
+                Pin = string.IsNullOrWhiteSpace(txtPin.Text) ? null : txtPin.Text.Trim(),
                 Phone = txtPhone.Text,
                 DepartmentId = int.TryParse(txtDeptId.Text, out var d) ? d : 1,
                 Role = cmbRole.SelectedItem?.ToString() ?? "Employee",

@@ -37,6 +37,8 @@
                             Style="{StaticResource SidebarButton}" />
                     <Button x:Name="BtnNotifications" Content="Notifications" Click="NavButton_Click" Tag="Notifications"
                             Style="{StaticResource SidebarButton}" />
+                    <Button x:Name="BtnApprovals" Content="Approvals" Click="NavButton_Click" Tag="Approvals"
+                            Style="{StaticResource SidebarButton}" Visibility="Collapsed" />
                     <Button x:Name="BtnAuditLog" Content="Audit Log" Click="NavButton_Click" Tag="AuditLog"
                             Style="{StaticResource SidebarButton}" Visibility="Collapsed" />
                     <Button x:Name="BtnSettings" Content="Settings" Click="NavButton_Click" Tag="Settings"

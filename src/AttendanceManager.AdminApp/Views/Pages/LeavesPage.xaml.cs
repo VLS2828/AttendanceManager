@@ -84,6 +84,7 @@ public partial class LeavesPage : UserControl
 public class ApplyLeaveDialog : Window
 {
     public object? LeaveData { get; private set; }
+    private readonly ComboBox _cmbType;
 
     public ApplyLeaveDialog()
     {
@@ -96,13 +97,17 @@ public class ApplyLeaveDialog : Window
         var panel = new StackPanel { Margin = new Thickness(20) };
 
         panel.Children.Add(new TextBlock { Text = "Leave Type:" });
-        var cmbType = new ComboBox { Margin = new Thickness(0, 2, 0, 8) };
-        cmbType.Items.Add(new ComboBoxItem { Content = "Casual Leave", Tag = 1 });
-        cmbType.Items.Add(new ComboBoxItem { Content = "Sick Leave", Tag = 2 });
-        cmbType.Items.Add(new ComboBoxItem { Content = "Earned Leave", Tag = 3 });
-        cmbType.Items.Add(new ComboBoxItem { Content = "Compensatory Off", Tag = 4 });
-        cmbType.SelectedIndex = 0;
-        panel.Children.Add(cmbType);
+        _cmbType = new ComboBox { Margin = new Thickness(0, 2, 0, 8), DisplayMemberPath = "Name" };
+        panel.Children.Add(_cmbType);
+
+        var cmbType = _cmbType;
+
+        Loaded += async (_, _) =>
+        {
+            var types = await App.Api.GetLeaveTypesAsync();
+            cmbType.ItemsSource = types;
+            if (types.Count > 0) cmbType.SelectedIndex = 0;
+        };
 
         panel.Children.Add(new TextBlock { Text = "Start Date:" });
         var dpStart = new DatePicker { Margin = new Thickness(0, 2, 0, 8), SelectedDate = DateTime.Today };
@@ -120,11 +125,11 @@ public class ApplyLeaveDialog : Window
         var okBtn = new Button { Content = "Submit", Width = 80, Margin = new Thickness(0, 0, 10, 0) };
         okBtn.Click += (_, _) =>
         {
-            var selectedType = cmbType.SelectedItem as ComboBoxItem;
+            var selectedType = cmbType.SelectedItem as AttendanceManager.Shared.DTOs.LeaveTypeDto;
             LeaveData = new
             {
                 EmployeeId = App.Api.EmployeeId,
-                LeaveTypeId = (int)(selectedType?.Tag ?? 1),
+                LeaveTypeId = selectedType?.Id ?? 1,
                 StartDate = dpStart.SelectedDate?.ToString("yyyy-MM-dd") ?? "",
                 EndDate = dpEnd.SelectedDate?.ToString("yyyy-MM-dd") ?? "",
                 Reason = txtReason.Text

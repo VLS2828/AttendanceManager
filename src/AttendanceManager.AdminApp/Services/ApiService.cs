@@ -223,6 +223,46 @@ public class ApiService
         return result?.Data ?? new();
     }
 
+    public async Task<List<ApprovalItemDto>> GetPendingApprovalsAsync()
+    {
+        var result = await GetAsync<List<ApprovalItemDto>>("api/approvals/pending");
+        return result?.Data ?? new();
+    }
+
+    public async Task<ApiResponse?> ApproveCorrectionAsync(int id, string? comment)
+    {
+        var url = $"api/correction/{id}/approve" + (comment != null ? $"?comment={Uri.EscapeDataString(comment)}" : "");
+        var response = await _httpClient.PostAsync(url, null);
+        var content = await response.Content.ReadAsStringAsync();
+        return JsonSerializer.Deserialize<ApiResponse>(content, _jsonOptions);
+    }
+
+    public async Task<ApiResponse?> RejectCorrectionAsync(int id, string? comment)
+    {
+        var url = $"api/correction/{id}/reject" + (comment != null ? $"?comment={Uri.EscapeDataString(comment)}" : "");
+        var response = await _httpClient.PostAsync(url, null);
+        var content = await response.Content.ReadAsStringAsync();
+        return JsonSerializer.Deserialize<ApiResponse>(content, _jsonOptions);
+    }
+
+    public async Task<byte[]?> DownloadAttendanceCsvAsync(string startDate, string endDate)
+    {
+        try
+        {
+            var response = await _httpClient.GetAsync($"api/report/attendance/csv?startDate={startDate}&endDate={endDate}");
+            if (response.IsSuccessStatusCode)
+                return await response.Content.ReadAsByteArrayAsync();
+            return null;
+        }
+        catch { return null; }
+    }
+
+    public async Task<List<LeaveTypeDto>> GetLeaveTypesAsync()
+    {
+        var result = await GetAsync<List<LeaveTypeDto>>("api/leave/types");
+        return result?.Data ?? new();
+    }
+
     private async Task<ApiResponse<T>?> GetAsync<T>(string url)
     {
         try

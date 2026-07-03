@@ -62,6 +62,30 @@ public partial class ReportsPage : UserControl
         }
     }
 
+    private async void BtnDownloadCsv_Click(object sender, RoutedEventArgs e)
+    {
+        var startDate = DpStart.SelectedDate?.ToString("yyyy-MM-dd") ?? DateTime.Today.ToString("yyyy-MM-dd");
+        var endDate = DpEnd.SelectedDate?.ToString("yyyy-MM-dd") ?? DateTime.Today.ToString("yyyy-MM-dd");
+
+        var dialog = new Microsoft.Win32.SaveFileDialog
+        {
+            Filter = "CSV Files|*.csv",
+            FileName = $"attendance_{startDate}_to_{endDate}.csv"
+        };
+
+        if (dialog.ShowDialog() != true) return;
+
+        var bytes = await App.Api.DownloadAttendanceCsvAsync(startDate, endDate);
+        if (bytes == null || bytes.Length == 0)
+        {
+            MessageBox.Show("No data returned from server.", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        System.IO.File.WriteAllBytes(dialog.FileName, bytes);
+        MessageBox.Show("CSV downloaded successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+    }
+
     private void ExportToExcel(string filePath)
     {
         using var workbook = new ClosedXML.Excel.XLWorkbook();

@@ -19,6 +19,7 @@ public partial class MainWindow : Window
 
         if (App.Api.IsAdmin)
         {
+            BtnApprovals.Visibility = Visibility.Visible;
             BtnAuditLog.Visibility = Visibility.Visible;
             BtnSettings.Visibility = Visibility.Visible;
         }
@@ -45,6 +46,7 @@ public partial class MainWindow : Window
             "Reports" => new ReportsPage(),
             "Holidays" => new HolidaysPage(),
             "Notifications" => new NotificationsPage(),
+            "Approvals" => new ApprovalsPage(),
             "AuditLog" => new AuditLogPage(),
             "Settings" => new SettingsPage(),
             _ => null

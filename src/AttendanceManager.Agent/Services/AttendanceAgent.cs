@@ -75,6 +75,28 @@ public class AttendanceAgent
             return false;
         }
 
+        return await ApplyLoginResponse(loginResponse, email, serverUrl);
+    }
+
+    public async Task<bool> ConfigureByPinAsync(string email, string pin, string serverUrl)
+    {
+        var loginResponse = await _apiClient.AuthenticateByPinAsync(new LoginPinRequest
+        {
+            Email = email,
+            Pin = pin
+        });
+
+        if (loginResponse == null || !loginResponse.Success)
+        {
+            _logger.LogWarning("PIN authentication failed for {Email}", email);
+            return false;
+        }
+
+        return await ApplyLoginResponse(loginResponse, email, serverUrl);
+    }
+
+    private async Task<bool> ApplyLoginResponse(LoginResponse loginResponse, string email, string serverUrl)
+    {
         _config = new AgentConfig
         {
             EmployeeId = loginResponse.EmployeeId,
@@ -143,6 +165,86 @@ public class AttendanceAgent
         _idleDetector.Stop();
         _syncTimer.Stop();
         _notificationTimer.Stop();
+    }
+
+    public async Task<(bool Success, string? Error)> TryClockOutAsync()
+    {
+        if (_config == null || _config.EmployeeId <= 0)
+            return (false, "Not configured.");
+
+        await SyncPendingDataAsync();
+
+        var result = await _apiClient.RecordLogoutAsync(new AgentLogoutRequest { EmployeeId = _config.EmployeeId });
+        if (result?.Success == true)
+        {
+            _idleDetector.Stop();
+            _syncTimer.Stop();
+            _notificationTimer.Stop();
+            StatusChanged?.Invoke(this, "Clocked Out");
+            _logger.LogInformation("Manual clock-out for Employee {Id}", _config.EmployeeId);
+            return (true, null);
+        }
+
+        return (false, result?.Message ?? "Failed to clock out.");
+    }
+
+    public async Task<(bool Success, string? Error)> SubmitWorkSummaryAsync(List<WorkSummaryEntryDto> entries)
+    {
+        if (_config == null) return (false, "Not configured.");
+
+        var request = new SubmitWorkSummaryRequest
+        {
+            EmployeeId = _config.EmployeeId,
+            Date = DateOnly.FromDateTime(DateTime.Now).ToString("yyyy-MM-dd"),
+            Entries = entries
+        };
+
+        var result = await _apiClient.SubmitWorkSummaryAsync(request, _config.Token);
+        if (result?.Success == true) return (true, null);
+        return (false, result?.Message ?? "Failed to submit work summary.");
+    }
+
+    public async Task<(bool Success, string? Error)> SubmitLeaveRequestAsync(int leaveTypeId, string startDate, string endDate, string? reason)
+    {
+        if (_config == null) return (false, "Not configured.");
+
+        var request = new SubmitLeaveRequest
+        {
+            EmployeeId = _config.EmployeeId,
+            LeaveTypeId = leaveTypeId,
+            StartDate = startDate,
+            EndDate = endDate,
+            Reason = reason
+        };
+
+        var result = await _apiClient.SubmitLeaveRequestAsync(request, _config.Token);
+        if (result?.Success == true) return (true, null);
+        return (false, result?.Message ?? "Failed to submit leave request.");
+    }
+
+    public async Task<(bool Success, string? Error)> SubmitCorrectionAsync(string date, string claimedStatus, string? loginTime, string? logoutTime, string reason)
+    {
+        if (_config == null) return (false, "Not configured.");
+
+        var request = new SubmitCorrectionRequest
+        {
+            EmployeeId = _config.EmployeeId,
+            Date = date,
+            ClaimedStatus = claimedStatus,
+            ClaimedLoginTime = loginTime,
+            ClaimedLogoutTime = logoutTime,
+            Reason = reason
+        };
+
+        var result = await _apiClient.SubmitCorrectionAsync(request, _config.Token);
+        if (result?.Success == true) return (true, null);
+        return (false, result?.Message ?? "Failed to submit correction.");
+    }
+
+    public async Task<List<LeaveTypeDto>> GetLeaveTypesAsync()
+    {
+        if (_config == null) return new();
+        return await _apiClient.GetLeaveTypesAsync(_config.Token) ?? new();
     }
 
     public void Shutdown()

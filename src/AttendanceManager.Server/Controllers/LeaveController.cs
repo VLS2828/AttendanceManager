@@ -84,6 +84,18 @@ public class LeaveController : ControllerBase
         return Ok(ApiResponse<List<LeaveRequestDto>>.Ok(dtos));
     }
 
+    [HttpGet("types")]
+    public async Task<ActionResult<ApiResponse<List<LeaveTypeDto>>>> GetLeaveTypes()
+    {
+        var types = await _leaveService.GetLeaveTypesAsync();
+        return Ok(ApiResponse<List<LeaveTypeDto>>.Ok(types.Select(t => new LeaveTypeDto
+        {
+            Id = t.Id,
+            Name = t.Name,
+            DefaultDaysPerYear = t.DefaultDaysPerYear
+        }).ToList()));
+    }
+
     [HttpGet("balance/{employeeId}")]
     public async Task<ActionResult<ApiResponse<List<LeaveBalanceDto>>>> GetBalance(int employeeId, [FromQuery] int? year)
     {
@@ -124,11 +136,3 @@ public class LeaveController : ControllerBase
     }
 }
 
-public class SubmitLeaveRequest
-{
-    public int EmployeeId { get; set; }
-    public int LeaveTypeId { get; set; }
-    public string StartDate { get; set; } = string.Empty;
-    public string EndDate { get; set; } = string.Empty;
-    public string? Reason { get; set; }
-}

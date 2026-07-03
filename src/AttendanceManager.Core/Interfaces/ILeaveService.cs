@@ -14,4 +14,5 @@ public interface ILeaveService
     Task<IEnumerable<LeaveRequest>> GetLeaveRequestsByDateRangeAsync(DateOnly startDate, DateOnly endDate);
     Task<IEnumerable<LeaveBalance>> GetLeaveBalancesAsync(int employeeId, int year);
     Task InitializeLeaveBalancesAsync(int employeeId, int year);
+    Task<IEnumerable<LeaveType>> GetLeaveTypesAsync();
 }

@@ -205,4 +205,7 @@ public class LeaveService : ILeaveService
         }
         await _unitOfWork.SaveChangesAsync();
     }
+
+    public async Task<IEnumerable<LeaveType>> GetLeaveTypesAsync() =>
+        await _unitOfWork.LeaveTypes.FindAsync(lt => lt.IsActive);
 }

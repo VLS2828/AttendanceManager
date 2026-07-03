@@ -77,6 +77,99 @@ public class ApiClient
         }
     }
 
+    public async Task<LoginResponse?> AuthenticateByPinAsync(LoginPinRequest request)
+    {
+        try
+        {
+            var response = await _httpClient.PostAsJsonAsync("api/auth/login-pin", request);
+            var content = await response.Content.ReadAsStringAsync();
+            return JsonSerializer.Deserialize<LoginResponse>(content, _jsonOptions);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to authenticate by PIN");
+            return null;
+        }
+    }
+
+    public async Task<ApiResponse<WorkSummaryDto>?> SubmitWorkSummaryAsync(SubmitWorkSummaryRequest request, string token)
+    {
+        try
+        {
+            var req = new HttpRequestMessage(HttpMethod.Post, "api/worksummary")
+            {
+                Content = JsonContent.Create(request)
+            };
+            req.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            var response = await _httpClient.SendAsync(req);
+            var content = await response.Content.ReadAsStringAsync();
+            return JsonSerializer.Deserialize<ApiResponse<WorkSummaryDto>>(content, _jsonOptions);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to submit work summary");
+            return null;
+        }
+    }
+
+    public async Task<ApiResponse<LeaveRequestDto>?> SubmitLeaveRequestAsync(SubmitLeaveRequest request, string token)
+    {
+        try
+        {
+            var req = new HttpRequestMessage(HttpMethod.Post, "api/leave/request")
+            {
+                Content = JsonContent.Create(request)
+            };
+            req.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            var response = await _httpClient.SendAsync(req);
+            var content = await response.Content.ReadAsStringAsync();
+            return JsonSerializer.Deserialize<ApiResponse<LeaveRequestDto>>(content, _jsonOptions);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to submit leave request");
+            return null;
+        }
+    }
+
+    public async Task<ApiResponse<CorrectionDto>?> SubmitCorrectionAsync(SubmitCorrectionRequest request, string token)
+    {
+        try
+        {
+            var req = new HttpRequestMessage(HttpMethod.Post, "api/correction")
+            {
+                Content = JsonContent.Create(request)
+            };
+            req.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            var response = await _httpClient.SendAsync(req);
+            var content = await response.Content.ReadAsStringAsync();
+            return JsonSerializer.Deserialize<ApiResponse<CorrectionDto>>(content, _jsonOptions);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to submit correction");
+            return null;
+        }
+    }
+
+    public async Task<List<LeaveTypeDto>?> GetLeaveTypesAsync(string token)
+    {
+        try
+        {
+            var req = new HttpRequestMessage(HttpMethod.Get, "api/leave/types");
+            req.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            var response = await _httpClient.SendAsync(req);
+            var content = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<ApiResponse<List<LeaveTypeDto>>>(content, _jsonOptions);
+            return result?.Data;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get leave types");
+            return null;
+        }
+    }
+
     public async Task<List<NotificationDto>?> GetUnreadNotificationsAsync(int employeeId, string token)
     {
         try

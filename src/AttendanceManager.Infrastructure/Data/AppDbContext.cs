@@ -18,6 +18,10 @@ public class AppDbContext : DbContext
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<AppSetting> AppSettings => Set<AppSetting>();
     public DbSet<IdleLog> IdleLogs => Set<IdleLog>();
+    public DbSet<Correction> Corrections => Set<Correction>();
+    public DbSet<WorkSummary> WorkSummaries => Set<WorkSummary>();
+    public DbSet<WorkSummaryEntry> WorkSummaryEntries => Set<WorkSummaryEntry>();
+    public DbSet<ActivitySession> ActivitySessions => Set<ActivitySession>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -34,6 +38,7 @@ public class AppDbContext : DbContext
             entity.Property(e => e.Email).HasMaxLength(200).IsRequired();
             entity.Property(e => e.EmployeeCode).HasMaxLength(20).IsRequired();
             entity.Property(e => e.PasswordHash).HasMaxLength(500).IsRequired();
+            entity.Property(e => e.PinHash).HasMaxLength(500);
             entity.Property(e => e.Phone).HasMaxLength(20);
             entity.Ignore(e => e.FullName);
 
@@ -178,6 +183,62 @@ public class AppDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
+        // Correction
+        modelBuilder.Entity<Correction>(entity =>
+        {
+            entity.HasKey(c => c.Id);
+            entity.HasIndex(c => new { c.EmployeeId, c.Date });
+            entity.Property(c => c.Reason).HasMaxLength(500).IsRequired();
+            entity.Property(c => c.AdminComment).HasMaxLength(500);
+
+            entity.HasOne(c => c.Employee)
+                .WithMany()
+                .HasForeignKey(c => c.EmployeeId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(c => c.DecidedBy)
+                .WithMany()
+                .HasForeignKey(c => c.DecidedById)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // WorkSummary
+        modelBuilder.Entity<WorkSummary>(entity =>
+        {
+            entity.HasKey(w => w.Id);
+            entity.HasIndex(w => new { w.EmployeeId, w.Date }).IsUnique();
+
+            entity.HasOne(w => w.Employee)
+                .WithMany()
+                .HasForeignKey(w => w.EmployeeId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // WorkSummaryEntry
+        modelBuilder.Entity<WorkSummaryEntry>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Client).HasMaxLength(200).IsRequired();
+            entity.Property(e => e.Description).HasMaxLength(1000).IsRequired();
+
+            entity.HasOne(e => e.WorkSummary)
+                .WithMany(w => w.Entries)
+                .HasForeignKey(e => e.WorkSummaryId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // ActivitySession
+        modelBuilder.Entity<ActivitySession>(entity =>
+        {
+            entity.HasKey(a => a.Id);
+            entity.HasIndex(a => new { a.EmployeeId, a.Date });
+
+            entity.HasOne(a => a.Employee)
+                .WithMany()
+                .HasForeignKey(a => a.EmployeeId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
         SeedData(modelBuilder);
     }
 
@@ -201,7 +262,7 @@ public class AppDbContext : DbContext
             new AppSetting { Id = 1, Key = "WorkStartTime", Value = "09:30", Description = "Standard work start time (HH:mm)", UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
             new AppSetting { Id = 2, Key = "WorkEndTime", Value = "18:30", Description = "Standard work end time (HH:mm)", UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
             new AppSetting { Id = 3, Key = "StandardWorkHours", Value = "9", Description = "Standard working hours per day", UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
-            new AppSetting { Id = 4, Key = "IdleThresholdMinutes", Value = "6", Description = "Minutes of inactivity before marking as idle", UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+            new AppSetting { Id = 4, Key = "IdleThresholdMinutes", Value = "5", Description = "Minutes of inactivity before marking as idle", UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
             new AppSetting { Id = 5, Key = "LateThresholdMinutes", Value = "15", Description = "Grace period in minutes for late arrivals", UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
             new AppSetting { Id = 6, Key = "HalfDayThresholdHours", Value = "4.5", Description = "Minimum hours for half-day attendance", UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
             new AppSetting { Id = 7, Key = "WeeklyOffDays", Value = "Saturday,Sunday", Description = "Weekly off days", UpdatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) }

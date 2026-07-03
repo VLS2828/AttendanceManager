@@ -5,6 +5,11 @@ using Microsoft.Extensions.Logging;
 
 namespace AttendanceManager.Infrastructure.Services;
 
+public class WorkSummaryRequiredException : InvalidOperationException
+{
+    public WorkSummaryRequiredException(string message) : base(message) { }
+}
+
 public class AttendanceService : IAttendanceService
 {
     private readonly IUnitOfWork _unitOfWork;
@@ -58,6 +63,13 @@ public class AttendanceService : IAttendanceService
             _logger.LogWarning("No attendance found for Employee {EmpId} on {Date} for logout", employeeId, today);
             return null;
         }
+
+        var workSummary = await _unitOfWork.WorkSummaries.FirstOrDefaultAsync(
+            w => w.EmployeeId == employeeId && w.Date == today);
+        var hasEntries = workSummary != null &&
+            (await _unitOfWork.WorkSummaryEntries.AnyAsync(e => e.WorkSummaryId == workSummary.Id));
+        if (!hasEntries)
+            throw new WorkSummaryRequiredException("A daily work summary with at least one entry is required before clocking out.");
 
         attendance.LogoutTime = DateTime.Now;
 
@@ -247,7 +259,7 @@ public class AttendanceService : IAttendanceService
                           lr.Status == LeaveStatus.Approved &&
                           lr.StartDate <= date && lr.EndDate >= date);
 
-                var status = approvedLeave != null ? AttendanceStatus.Leave : AttendanceStatus.Absent;
+                var status = approvedLeave != null ? AttendanceStatus.Leave : AttendanceStatus.Missing;
                 await CreateStatusAttendanceAsync(employee.Id, date, status);
             }
         }

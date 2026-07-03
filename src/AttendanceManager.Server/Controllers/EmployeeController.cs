@@ -56,7 +56,16 @@ public class EmployeeController : ControllerBase
 
         var created = await _employeeService.CreateAsync(employee, request.Password);
         await _leaveService.InitializeLeaveBalancesAsync(created.Id, DateTime.Now.Year);
-        return Ok(ApiResponse<EmployeeDto>.Ok(MapToDto(created), "Employee created successfully."));
+        var pin = await _employeeService.SetPinAsync(created.Id, request.Pin);
+        return Ok(ApiResponse<EmployeeDto>.Ok(MapToDto(created), $"Employee created successfully. PIN: {pin}"));
+    }
+
+    [HttpPost("{id}/reset-pin")]
+    [Authorize(Policy = "AdminOnly")]
+    public async Task<ActionResult<ApiResponse>> ResetPin(int id, [FromBody] ResetPinRequest request)
+    {
+        var pin = await _employeeService.SetPinAsync(id, request.Pin);
+        return Ok(ApiResponse.Ok($"PIN reset. New PIN: {pin}"));
     }
 
     [HttpPut("{id}")]
@@ -129,6 +138,12 @@ public class CreateEmployeeRequest
     public int DepartmentId { get; set; }
     public string Role { get; set; } = "Employee";
     public string JoiningDate { get; set; } = string.Empty;
+    public string? Pin { get; set; }
+}
+
+public class ResetPinRequest
+{
+    public string? Pin { get; set; }
 }
 
 public class UpdateEmployeeRequest

@@ -39,11 +39,18 @@ public class AttendanceController : ControllerBase
     [AllowAnonymous]
     public async Task<ActionResult<ApiResponse<AttendanceDto>>> RecordLogout([FromBody] AgentLogoutRequest request)
     {
-        var attendance = await _attendanceService.RecordLogoutAsync(request.EmployeeId);
-        if (attendance == null)
-            return Ok(ApiResponse<AttendanceDto>.Fail("No attendance record found for today."));
+        try
+        {
+            var attendance = await _attendanceService.RecordLogoutAsync(request.EmployeeId);
+            if (attendance == null)
+                return Ok(ApiResponse<AttendanceDto>.Fail("No attendance record found for today."));
 
-        return Ok(ApiResponse<AttendanceDto>.Ok(MapToDto(attendance)));
+            return Ok(ApiResponse<AttendanceDto>.Ok(MapToDto(attendance)));
+        }
+        catch (AttendanceManager.Infrastructure.Services.WorkSummaryRequiredException ex)
+        {
+            return Ok(ApiResponse<AttendanceDto>.Fail(ex.Message));
+        }
     }
 
     [HttpPost("idle")]

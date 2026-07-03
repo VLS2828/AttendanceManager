@@ -5,6 +5,8 @@ namespace AttendanceManager.Core.Interfaces;
 public interface IEmployeeService
 {
     Task<Employee?> AuthenticateAsync(string email, string password);
+    Task<Employee?> AuthenticateByPinAsync(string email, string pin);
+    Task<string> SetPinAsync(int employeeId, string? pin);
     Task<Employee?> GetByIdAsync(int id);
     Task<IEnumerable<Employee>> GetAllActiveAsync();
     Task<Employee> CreateAsync(Employee employee, string password);

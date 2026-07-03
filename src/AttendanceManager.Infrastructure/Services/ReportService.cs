@@ -19,6 +19,9 @@ public class ReportService : IReportService
     public async Task<IEnumerable<Attendance>> GetDailyAttendanceReportAsync(DateOnly date) =>
         await _unitOfWork.Attendances.FindAsync(a => a.Date == date);
 
+    public async Task<IEnumerable<Attendance>> GetAttendanceReportAsync(DateOnly startDate, DateOnly endDate) =>
+        await _unitOfWork.Attendances.FindAsync(a => a.Date >= startDate && a.Date <= endDate);
+
     public async Task<IEnumerable<Attendance>> GetMonthlyAttendanceReportAsync(int employeeId, int year, int month)
     {
         var startDate = new DateOnly(year, month, 1);

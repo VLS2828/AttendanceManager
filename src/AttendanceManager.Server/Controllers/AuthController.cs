@@ -43,4 +43,30 @@ public class AuthController : ControllerBase
             Role = employee.Role.ToString()
         });
     }
+
+    [HttpPost("login-pin")]
+    public async Task<ActionResult<LoginResponse>> LoginWithPin([FromBody] LoginPinRequest request)
+    {
+        var employee = await _employeeService.AuthenticateByPinAsync(request.Email, request.Pin);
+        if (employee == null)
+        {
+            return Ok(new LoginResponse
+            {
+                Success = false,
+                ErrorMessage = "Invalid email or PIN."
+            });
+        }
+
+        var jwtKey = _configuration["Jwt:Key"]!;
+        var token = JwtHelper.GenerateToken(employee.Id, employee.Email, employee.Role.ToString(), jwtKey);
+
+        return Ok(new LoginResponse
+        {
+            Success = true,
+            Token = token,
+            EmployeeId = employee.Id,
+            FullName = employee.FullName,
+            Role = employee.Role.ToString()
+        });
+    }
 }

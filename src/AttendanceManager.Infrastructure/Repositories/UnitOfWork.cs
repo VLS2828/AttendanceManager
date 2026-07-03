@@ -18,6 +18,10 @@ public class UnitOfWork : IUnitOfWork
     private IRepository<Notification>? _notifications;
     private IRepository<AppSetting>? _appSettings;
     private IRepository<IdleLog>? _idleLogs;
+    private IRepository<Correction>? _corrections;
+    private IRepository<WorkSummary>? _workSummaries;
+    private IRepository<WorkSummaryEntry>? _workSummaryEntries;
+    private IRepository<ActivitySession>? _activitySessions;
 
     public UnitOfWork(AppDbContext context) => _context = context;
 
@@ -32,6 +36,10 @@ public class UnitOfWork : IUnitOfWork
     public IRepository<Notification> Notifications => _notifications ??= new Repository<Notification>(_context);
     public IRepository<AppSetting> AppSettings => _appSettings ??= new Repository<AppSetting>(_context);
     public IRepository<IdleLog> IdleLogs => _idleLogs ??= new Repository<IdleLog>(_context);
+    public IRepository<Correction> Corrections => _corrections ??= new Repository<Correction>(_context);
+    public IRepository<WorkSummary> WorkSummaries => _workSummaries ??= new Repository<WorkSummary>(_context);
+    public IRepository<WorkSummaryEntry> WorkSummaryEntries => _workSummaryEntries ??= new Repository<WorkSummaryEntry>(_context);
+    public IRepository<ActivitySession> ActivitySessions => _activitySessions ??= new Repository<ActivitySession>(_context);
 
     public async Task<int> SaveChangesAsync() => await _context.SaveChangesAsync();
 

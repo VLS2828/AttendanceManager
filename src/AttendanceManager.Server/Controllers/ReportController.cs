@@ -165,6 +165,39 @@ public class ReportController : ControllerBase
         }).ToList()));
     }
 
+    [HttpGet("attendance/csv")]
+    public async Task<IActionResult> AttendanceCsv([FromQuery] string startDate, [FromQuery] string endDate)
+    {
+        var start = DateOnly.Parse(startDate);
+        var end = DateOnly.Parse(endDate);
+        var records = await _reportService.GetAttendanceReportAsync(start, end);
+
+        var csv = new System.Text.StringBuilder();
+        csv.AppendLine("EmployeeId,EmployeeName,Date,LoginTime,LogoutTime,Status,TotalHours,IdleTimeMinutes,EffectiveHours");
+        foreach (var r in records.OrderBy(r => r.Date).ThenBy(r => r.EmployeeId))
+        {
+            var emp = await _employeeService.GetByIdAsync(r.EmployeeId);
+            csv.AppendLine(string.Join(",",
+                r.EmployeeId,
+                CsvEscape(emp?.FullName ?? ""),
+                r.Date.ToString("yyyy-MM-dd"),
+                r.LoginTime?.ToString("HH:mm:ss"),
+                r.LogoutTime?.ToString("HH:mm:ss"),
+                r.Status.ToString(),
+                r.TotalHours,
+                r.IdleTimeMinutes,
+                r.EffectiveHours));
+        }
+
+        var bytes = System.Text.Encoding.UTF8.GetBytes(csv.ToString());
+        return File(bytes, "text/csv", $"attendance_{startDate}_to_{endDate}.csv");
+    }
+
+    private static string CsvEscape(string value) =>
+        value.Contains(',') || value.Contains('"')
+            ? $"\"{value.Replace("\"", "\"\"")}\""
+            : value;
+
     [HttpGet("department-summary")]
     public async Task<ActionResult<ApiResponse<Dictionary<string, object>>>> DepartmentSummary(
         [FromQuery] string startDate, [FromQuery] string endDate)

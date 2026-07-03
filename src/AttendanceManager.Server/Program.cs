@@ -39,6 +39,9 @@ try
     builder.Services.AddScoped<INotificationService, NotificationService>();
     builder.Services.AddScoped<ILeaveService, LeaveService>();
     builder.Services.AddScoped<IReportService, ReportService>();
+    builder.Services.AddScoped<IWorkSummaryService, WorkSummaryService>();
+    builder.Services.AddScoped<ICorrectionService, CorrectionService>();
+    builder.Services.AddScoped<IActivitySessionService, ActivitySessionService>();
 
     // JWT Authentication
     builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

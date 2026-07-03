@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS Employees (
     LastName NVARCHAR(100) NOT NULL,
     Email NVARCHAR(200) NOT NULL UNIQUE,
     PasswordHash NVARCHAR(500) NOT NULL,
+    PinHash NVARCHAR(500) NULL,
     Phone NVARCHAR(20) NULL,
     DepartmentId INT NOT NULL FOREIGN KEY REFERENCES Departments(Id),
     Role INT NOT NULL DEFAULT 0, -- 0=Employee, 1=Admin
@@ -160,6 +161,53 @@ CREATE TABLE IF NOT EXISTS IdleLogs (
     CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE()
 );
 
+-- Corrections
+CREATE TABLE IF NOT EXISTS Corrections (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    EmployeeId INT NOT NULL FOREIGN KEY REFERENCES Employees(Id) ON DELETE CASCADE,
+    Date DATE NOT NULL,
+    ClaimedStatus INT NOT NULL, -- 0=Present, 1=OnLeave
+    ClaimedLoginTime DATETIME2 NULL,
+    ClaimedLogoutTime DATETIME2 NULL,
+    Reason NVARCHAR(500) NOT NULL,
+    Status INT NOT NULL DEFAULT 0, -- 0=Pending, 1=Approved, 2=Rejected
+    AdminComment NVARCHAR(500) NULL,
+    RequestedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    DecidedAt DATETIME2 NULL,
+    DecidedById INT NULL FOREIGN KEY REFERENCES Employees(Id)
+);
+
+-- Work Summaries
+CREATE TABLE IF NOT EXISTS WorkSummaries (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    EmployeeId INT NOT NULL FOREIGN KEY REFERENCES Employees(Id) ON DELETE CASCADE,
+    Date DATE NOT NULL,
+    CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    UpdatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    CONSTRAINT UQ_WorkSummary_Employee_Date UNIQUE (EmployeeId, Date)
+);
+
+-- Work Summary Entries
+CREATE TABLE IF NOT EXISTS WorkSummaryEntries (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    WorkSummaryId INT NOT NULL FOREIGN KEY REFERENCES WorkSummaries(Id) ON DELETE CASCADE,
+    FromTime TIME NOT NULL,
+    ToTime TIME NOT NULL,
+    Client NVARCHAR(200) NOT NULL,
+    Description NVARCHAR(1000) NOT NULL
+);
+
+-- Activity Sessions
+CREATE TABLE IF NOT EXISTS ActivitySessions (
+    Id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    EmployeeId INT NOT NULL FOREIGN KEY REFERENCES Employees(Id) ON DELETE CASCADE,
+    Date DATE NOT NULL,
+    IntervalStart DATETIME2 NOT NULL,
+    IntervalEnd DATETIME2 NOT NULL,
+    State INT NOT NULL, -- 0=Active, 1=Idle
+    CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE()
+);
+
 -- Create Indexes
 CREATE INDEX IX_Attendance_Date ON Attendances(Date);
 CREATE INDEX IX_Attendance_EmployeeId ON Attendances(EmployeeId);
@@ -168,6 +216,8 @@ CREATE INDEX IX_AuditLog_Timestamp ON AuditLogs(Timestamp);
 CREATE INDEX IX_Notification_Employee_Read ON Notifications(EmployeeId, IsRead);
 CREATE INDEX IX_IdleLog_Employee_Date ON IdleLogs(EmployeeId, Date);
 CREATE INDEX IX_Holiday_Date ON Holidays(Date);
+CREATE INDEX IX_Correction_Employee_Date ON Corrections(EmployeeId, Date);
+CREATE INDEX IX_ActivitySession_Employee_Date ON ActivitySessions(EmployeeId, Date);
 
 -- Seed Data
 INSERT INTO Departments (Name, Description) VALUES
@@ -186,7 +236,7 @@ INSERT INTO AppSettings ([Key], Value, Description) VALUES
     ('WorkStartTime', '09:30', 'Standard work start time (HH:mm)'),
     ('WorkEndTime', '18:30', 'Standard work end time (HH:mm)'),
     ('StandardWorkHours', '9', 'Standard working hours per day'),
-    ('IdleThresholdMinutes', '6', 'Minutes of inactivity before marking as idle'),
+    ('IdleThresholdMinutes', '5', 'Minutes of inactivity before marking as idle'),
     ('LateThresholdMinutes', '15', 'Grace period in minutes for late arrivals'),
     ('HalfDayThresholdHours', '4.5', 'Minimum hours for half-day attendance'),
     ('WeeklyOffDays', 'Saturday,Sunday', 'Weekly off days');

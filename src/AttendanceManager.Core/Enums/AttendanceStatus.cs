@@ -8,5 +8,7 @@ public enum AttendanceStatus
     Holiday = 3,
     WeeklyOff = 4,
     HalfDay = 5,
-    WorkFromHome = 6
+    WorkFromHome = 6,
+    Missing = 7,
+    CorrectionPending = 8
 }

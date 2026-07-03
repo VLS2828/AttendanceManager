@@ -37,6 +37,44 @@ public class EmployeeService : IEmployeeService
         return employee;
     }
 
+    public async Task<Employee?> AuthenticateByPinAsync(string email, string pin)
+    {
+        var employee = await _unitOfWork.Employees.FirstOrDefaultAsync(
+            e => e.Email.ToLower() == email.ToLower() && e.IsActive);
+
+        if (employee == null || string.IsNullOrEmpty(employee.PinHash))
+        {
+            _logger.LogWarning("PIN authentication failed: no employee/PIN for email {Email}", email);
+            return null;
+        }
+
+        if (!PasswordHelper.VerifyPassword(pin, employee.PinHash))
+        {
+            _logger.LogWarning("PIN authentication failed: invalid PIN for {Email}", email);
+            return null;
+        }
+
+        _logger.LogInformation("Employee {Email} authenticated via PIN", email);
+        return employee;
+    }
+
+    public async Task<string> SetPinAsync(int employeeId, string? pin)
+    {
+        var employee = await _unitOfWork.Employees.GetByIdAsync(employeeId);
+        if (employee == null) throw new InvalidOperationException("Employee not found.");
+
+        var effectivePin = string.IsNullOrWhiteSpace(pin)
+            ? System.Security.Cryptography.RandomNumberGenerator.GetInt32(1000, 10000).ToString()
+            : pin;
+
+        employee.PinHash = PasswordHelper.HashPassword(effectivePin);
+        employee.UpdatedAt = DateTime.UtcNow;
+        _unitOfWork.Employees.Update(employee);
+        await _unitOfWork.SaveChangesAsync();
+
+        return effectivePin;
+    }
+
     public async Task<Employee?> GetByIdAsync(int id) =>
         await _unitOfWork.Employees.GetByIdAsync(id);
 

@@ -8,5 +8,8 @@ public enum NotificationType
     MissingAttendance = 3,
     SystemUpdate = 4,
     LeaveRequest = 5,
-    LeaveCancelled = 6
+    LeaveCancelled = 6,
+    CorrectionRequest = 7,
+    CorrectionApproved = 8,
+    CorrectionRejected = 9
 }

@@ -15,5 +15,9 @@ public interface IUnitOfWork : IDisposable
     IRepository<Notification> Notifications { get; }
     IRepository<AppSetting> AppSettings { get; }
     IRepository<IdleLog> IdleLogs { get; }
+    IRepository<Correction> Corrections { get; }
+    IRepository<WorkSummary> WorkSummaries { get; }
+    IRepository<WorkSummaryEntry> WorkSummaryEntries { get; }
+    IRepository<ActivitySession> ActivitySessions { get; }
     Task<int> SaveChangesAsync();
 }
